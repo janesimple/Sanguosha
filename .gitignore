@@ -1,0 +1,14 @@
+/.lake/build/
+/.lake/.locks/
+/.lake/packages/
+/.lake/packaging/
+
+*.olean
+*.ilean
+*.c
+*.o
+*.obj
+*.exe
+
+.DS_Store
+Thumbs.db

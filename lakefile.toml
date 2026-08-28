@@ -1,0 +1,10 @@
+name = "SanguoshaNew"
+version = "0.1.0"
+defaultTargets = ["SanguoshaNew", "sanguosha-new"]
+
+[[lean_lib]]
+name = "SanguoshaNew"
+
+[[lean_exe]]
+name = "sanguosha-new"
+root = "Main"
