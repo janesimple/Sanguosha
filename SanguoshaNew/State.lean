@@ -106,6 +106,27 @@ def merge (x y : CardPool) : CardPool :=
 def total (p : CardPool) : Nat :=
   p.slash + p.dodge + p.peach + p.wine + p.tactic + p.equipment
 
+/-- 空牌池的总数就是 0。 -/
+@[simp] theorem total_empty : CardPool.total CardPool.empty = 0 := by
+  rfl
+
+/-- 合并两个牌池后，总数就是两边总数相加。 -/
+@[simp] theorem total_merge (x y : CardPool) :
+    (x.merge y).total = x.total + y.total := by
+  cases x <;> cases y <;> simp [CardPool.total, CardPool.merge] <;> omega
+
+/-- 往牌池里加一张牌，总数一定加 1。 -/
+@[simp] theorem total_inc (p : CardPool) (c : CardName) :
+    (p.inc c).total = p.total + 1 := by
+  cases p
+  cases c with
+  | basic bc =>
+      cases bc <;> simp [CardPool.total, CardPool.inc] <;> omega
+  | tactic =>
+      simp [CardPool.total, CardPool.inc] <;> omega
+  | equipment =>
+      simp [CardPool.total, CardPool.inc] <;> omega
+
 end CardPool
 
 /-- 一名玩家当前的公开状态。 -/
@@ -159,6 +180,22 @@ def healOne (p : PlayerState) : PlayerState :=
 /-- 统计这名玩家所有私人区域中的牌数：手牌、装备区、判定区。 -/
 def cardTotal (p : PlayerState) : Nat :=
   p.hand.total + p.equipment.total + p.judgement.total
+
+/-- 往手牌里加一张牌，私人区总牌数会加 1。 -/
+@[simp] theorem cardTotal_gainToHand (p : PlayerState) (c : CardName) :
+    (p.gainToHand c).cardTotal = p.cardTotal + 1 := by
+  cases p <;> simp [PlayerState.cardTotal, PlayerState.gainToHand] <;> omega
+
+/-- 受到伤害只改体力，不改私人区总牌数。 -/
+@[simp] theorem cardTotal_damage (p : PlayerState) (amount : Nat) :
+    (p.damage amount).cardTotal = p.cardTotal := by
+  cases p <;> simp [PlayerState.cardTotal, PlayerState.damage]
+
+/-- 回 1 点体力也不会改变私人区总牌数。 -/
+@[simp] theorem cardTotal_healOne (p : PlayerState) :
+    p.healOne.cardTotal = p.cardTotal := by
+  unfold PlayerState.healOne
+  by_cases h : p.hp < p.maxHp <;> simp [h, PlayerState.cardTotal]
 
 end PlayerState
 

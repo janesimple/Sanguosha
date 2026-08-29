@@ -5,6 +5,16 @@ Lean 检查的形式化模型。
 
 规则参考来源：<https://gltjk.com/sanguosha/rules/>
 
+## 本轮更新
+
+这次主要是把项目往“学员可读、可练、可验证”的方向再推一步：
+
+- 新增 `SanguoshaNew/Exercises.lean`，把 `legal`、`transition`、`healOne`、自然数不等式等基础证明拆成练习题。
+- 扩充 `SanguoshaNew/Examples.lean`，补进非法命令返回 `none`、以及 `endPhase` 这类可直接运行的样例。
+- 在 `SanguoshaNew/Rules.lean` 里补了两个关键桥梁引理：`transition_eq_none_iff_not_legal` 和 `legal_of_transition_some`。
+- 在 `SanguoshaNew/State.lean` 里补齐了牌池总数、玩家牌数守恒等基础引理，方便后续 `simp` 证明。
+- 新增 `STUDY_GUIDE.md`，把阅读顺序和练习路径单独列出来，避免把正式证明和训练材料混在一起。
+
 ## 给初学者的阅读方式
 
 不要一上来就看证明。建议按这个顺序：
@@ -30,7 +40,10 @@ Lean 检查的形式化模型。
 7. `SanguoshaNew/Examples.lean`
    看几个具体例子，例如 A 对 B 出杀、B 出闪、A 吃桃。
 
-8. `SanguoshaNew/Invariant.lean`
+8. `SanguoshaNew/Exercises.lean`
+   先做一组短练习，把 `decide`、`simp`、`omega` 和基础引理串起来。
+
+9. `SanguoshaNew/Invariant.lean`
    最后看证明，例如“使用一张牌只是移动牌的位置，总牌数不变”。
 
 ## 当前建模范围
@@ -184,8 +197,10 @@ SanguoshaNew/
   Judgement.lean  判定：延时锦囊、改判技能、改判顺序证明
   MaLiangSixDamage.lean
                   路径：马良、郝昭、神郭嘉场景下的六伤证明
+  Exercises.lean  练习：基础证明和 `transition` 相关练习
   Invariant.lean  证明：牌数守恒等性质
   Examples.lean   样例：能直接跑通的小局面
+  STUDY_GUIDE.md   学习路线：先读什么、先练什么
 ```
 
 ## 当前核心思想

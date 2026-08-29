@@ -1,0 +1,365 @@
+\documentclass[UTF8,aspectratio=169]{ctexbeamer}
+
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{用 Lean 形式化验证三国杀规则与战术}
+\subtitle{Rule Consistency and Strategy Verification}
+\author{SanguoshaNew 项目汇报}
+\date{\today}
+
+\newcommand{\code}[1]{\texttt{#1}}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{20 分钟汇报结构}
+  \begin{enumerate}
+    \item 基于 Lean 构建三国杀的基本系统
+    \item 三国杀的规则一致性：Rule Consistency
+    \item 三国杀的战术检验：Strategy Verification
+  \end{enumerate}
+
+  \vspace{1em}
+  \begin{block}{核心问题}
+    能否把“规则是否自洽”和“某条战术是否必然成立”交给 Lean 内核检查？
+  \end{block}
+\end{frame}
+
+\section{基于 Lean 构建三国杀的基本系统}
+
+\begin{frame}{为什么用 Lean 建模三国杀}
+  三国杀规则的难点不在于单条规则复杂，而在于规则之间会相互叠加。
+
+  \begin{itemize}
+    \item 牌会在手牌、装备区、判定区、处理区、弃牌堆之间移动。
+    \item 同一时机可能有多个效果或技能等待结算。
+    \item 直觉推演容易漏掉锁定技、虚拟牌、区域移动和先后顺序。
+    \item Lean 的价值是把这些推演写成可检查的定义和定理。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{项目结构}
+  \begin{verbatim}
+SanguoshaNew/
+  Basic.lean              阶段、时机、区域、玩家、武将、技能
+  Card.lean               花色、颜色、基础牌、锦囊、武器
+  State.lean              玩家状态、游戏状态、牌区计数
+  Rules.lean              合法性判断和状态转移
+  Invariant.lean          牌数守恒等全局不变量
+  Judgement.lean          判定、延时锦囊、改判顺序
+  MaLiangSixDamage.lean   马良六伤路径证明
+  Examples.lean           小型可执行样例
+  Exercises.lean          基础证明练习
+  STUDY_GUIDE.md          学习路线说明
+  \end{verbatim}
+\end{frame}
+
+\begin{frame}{基本名词系统}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{回合与时机}
+        \begin{itemize}
+          \item 阶段：准备、判定、摸牌、出牌、弃牌、结束
+          \item 时机：空闲、响应、结算、阶段开始、阶段结束
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{区域与玩家}
+        \begin{itemize}
+          \item 区域：手牌、装备区、判定区、处理区、弃牌堆
+          \item 当前主模型先使用两人局状态
+          \item 特定战术证明可建立专用多人最小状态
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{牌与武将系统}
+  \begin{block}{牌名系统}
+    基础牌已经区分【杀】【火杀】【雷杀】【闪】【桃】【酒】；
+    证明需要时进一步登记【顺手牵羊】【借刀杀人】【丈八蛇矛】。
+  \end{block}
+
+  \begin{block}{武将与技能}
+    当前模型登记了张角、司马懿、马良、郝昭、神郭嘉：
+  \end{block}
+
+  \begin{verbatim}
+General.maLiang    -> [Skill.zishu, Skill.yingyuan]
+General.haoZhao    -> [Skill.zhengu]
+General.shenGuojia ->
+  [Skill.shenHuishi, Skill.tianyi, Skill.huiShiFarewell]
+  \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{状态转移接口}
+  项目的主规则接口是：
+
+  \begin{verbatim}
+transition : GameState -> Command -> Option GameState
+  \end{verbatim}
+
+  \begin{itemize}
+    \item 输入：当前局面和玩家命令。
+    \item 输出：合法则返回 \code{some 新局面}，非法则返回 \code{none}。
+    \item 好处：非法操作不会被悄悄当成正常操作继续结算。
+  \end{itemize}
+
+  \begin{block}{已经实现的基础行动}
+    使用【杀】、响应【闪】、使用【桃】、使用【酒】、结算待处理【杀】、结束阶段。
+  \end{block}
+\end{frame}
+
+\begin{frame}{本轮更新}
+  这次我们把项目往“学员可读、可练、可验证”的方向再推了一步：
+
+  \begin{itemize}
+    \item 新增 \code{Exercises.lean}，把 \code{legal}、\code{transition}、\code{healOne} 等基础证明拆成练习题。
+    \item 扩充 \code{Examples.lean}，补进非法命令返回 \code{none} 和 \code{endPhase} 的可运行样例。
+    \item 在 \code{Rules.lean} 里补了 \code{transition\_eq\_none\_iff\_not\_legal} 和 \code{legal\_of\_transition\_some}。
+    \item 在 \code{State.lean} 里补齐了牌池总数、玩家牌数守恒等基础引理。
+    \item 新增 \code{STUDY\_GUIDE.md}，单独给出阅读顺序和练习路径。
+  \end{itemize}
+\end{frame}
+
+\section{Rule Consistency}
+
+\begin{frame}{规则一致性问题}
+  \begin{block}{Research Question}
+    Given a formalized game, can Lean verify that its rules preserve global
+    invariants and that ambiguities in the ordering of game effects are
+    semantically harmless?
+  \end{block}
+
+  在本项目中，这个问题被拆成两类检查：
+
+  \begin{itemize}
+    \item 全局不变量：规则执行后，牌不会凭空产生或消失。
+    \item 顺序歧义：若两个效果顺序不同，最终语义是否真的相同。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{牌数守恒}
+  牌区模型使用计数结构 \code{CardPool}：
+
+  \begin{verbatim}
+def totalCards (s : GameState) : Nat :=
+  s.playerA.cardTotal
+    + s.playerB.cardTotal
+    + s.drawPile.total
+    + s.discardPile.total
+    + s.processing.total
+  \end{verbatim}
+
+  规则执行通常只是移动牌的位置，例如：
+
+  \begin{itemize}
+    \item 使用【杀】：手牌减少，处理区增加。
+    \item 使用【闪】：手牌减少，弃牌堆增加。
+    \item 结算结束：处理区进入弃牌堆。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{牌数守恒的 Lean 定理}
+  总定理：
+
+  \begin{verbatim}
+theorem transition_preserves_totalCards
+    (s : GameState)
+    (c : Command)
+    (s' : GameState)
+    (htrans : transition s c = some s') :
+    s'.totalCards = s.totalCards
+  \end{verbatim}
+
+  \begin{itemize}
+    \item 前提：命令 \code{c} 成功执行，得到新局面 \code{s'}。
+    \item 结论：新旧局面的总牌数相等。
+    \item 证明方法：按命令分类，分别证明每种规则不会破坏全局牌数。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{顺序歧义：张角与司马懿改判}
+  经典争议：张角和司马懿同时在场时，判定牌到底谁先改、谁后改？
+
+  \begin{itemize}
+    \item 张角【鬼道】：可以用一张黑色牌替换当前判定牌。
+    \item 司马懿【鬼才】：可以用一张手牌替换当前判定牌。
+    \item 改判本质上是“后执行者覆盖当前判定牌”。
+  \end{itemize}
+
+  \begin{block}{Lean 建模}
+    将改判动作写成列表，按列表顺序依次覆盖当前判定牌。
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{张角-司马懿实例}
+  同一局面，同样两次合法改判，只交换顺序：
+
+  \begin{verbatim}
+resolveJudgement initialJudgementCard
+  [simaGuicaiToHeart, zhangGuidaoToSpade]
+
+resolveJudgement initialJudgementCard
+  [zhangGuidaoToSpade, simaGuicaiToHeart]
+  \end{verbatim}
+
+  \begin{itemize}
+    \item 司马懿先改、张角后改：最终为黑桃 2，【闪电】命中。
+    \item 张角先改、司马懿后改：最终为红桃 K，【闪电】不命中。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{顺序确实影响游戏结果}
+  核心定理：
+
+  \begin{verbatim}
+theorem judgement_replacement_order_affects_game_result :
+    stateAfterSimaThenZhang != stateAfterZhangThenSima
+  \end{verbatim}
+
+  \begin{block}{结论}
+    这个例子证明：改判顺序不是语义无害的实现细节，而会改变最终游戏状态。
+  \end{block}
+
+  \begin{itemize}
+    \item 若最终是黑桃 2，张角被【闪电】造成 3 点伤害。
+    \item 若最终是红桃 K，【闪电】不造成伤害。
+  \end{itemize}
+\end{frame}
+
+\section{Strategy Verification}
+
+\begin{frame}{战术检验问题}
+  \begin{block}{Research Question}
+    Given a game state, can Lean formally verify the existence of a winning
+    sequence, or even a strategy that guarantees victory against every legal
+    response of the opponent?
+  \end{block}
+
+  本项目当前完成的是第一步：
+
+  \begin{itemize}
+    \item 给定一个具体局面；
+    \item 形式化一条候选行动序列；
+    \item 证明它对任意未知牌都能造成足够伤害。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{马良六伤实例：直觉与目标}
+  初始局面：
+
+  \begin{itemize}
+    \item 马良装备【丈八蛇矛】。
+    \item 手牌：【酒】、两张【杀】、【顺手牵羊】、【借刀杀人】。
+    \item 马良拥有锁定技【自书】和主动技【应援】。
+    \item 场上有队友郝昭。
+    \item 对手神郭嘉体力 5，手牌为 0，无防御干预。
+  \end{itemize}
+
+  \begin{block}{需要证明}
+    看似五张牌最多四伤，但存在一条总伤害至少为 6 的行动序列。
+  \end{block}
+\end{frame}
+
+\begin{frame}{五步六伤路径}
+  \begin{enumerate}
+    \item 使用【酒】，令下一张【杀】伤害 +1。
+    \item 发动【丈八蛇矛】，两张【杀】当一张【杀】；造成 2 伤，并通过【应援】交给郝昭。
+    \item 使用【借刀杀人】，令郝昭出【杀】；造成 2 伤，并通过【应援】把【借刀杀人】交给神郭嘉。
+    \item 使用【顺手牵羊】拿回【借刀杀人】；【自书】锁定触发，摸一张未知牌 \code{X}。
+    \item 再次使用【借刀杀人】，令郝昭再出【杀】；造成最后 2 伤。
+  \end{enumerate}
+
+  \vspace{0.5em}
+  总伤害：$2 + 2 + 2 = 6$。
+\end{frame}
+
+\begin{frame}{关键：未知牌 X 不影响路径}
+  第四步之后，马良的手牌结构包含：
+
+  \begin{itemize}
+    \item 通过【顺手牵羊】拿回的【借刀杀人】；
+    \item 通过【自书】摸到的一张未知牌 \code{X}。
+  \end{itemize}
+
+  \begin{block}{数量不变量}
+    第二次【借刀杀人】只要求马良持有【借刀杀人】，
+    不要求 \code{X} 是某种特定牌。
+  \end{block}
+
+  因此，这条路径不依赖运气，只依赖【自书】带来的手牌数量保证。
+\end{frame}
+
+\begin{frame}[fragile]{任意未知牌的 Lean 表述}
+  未知牌被建模为变量：
+
+  \begin{verbatim}
+drawn : SixDamageCard
+  \end{verbatim}
+
+  核心定理使用全称量词覆盖所有可能的 \code{drawn}：
+
+  \begin{verbatim}
+theorem maliang_has_six_damage_path_for_any_unknown_card :
+    forall drawn : SixDamageCard,
+      exists actions : List SixDamageAction,
+        actions = sixDamageActions drawn /\
+          (runSixDamagePath drawn).totalDamageToShen >= 6 /\
+          (runSixDamagePath drawn).shenGuojiaHp = 0
+  \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{证明结构}
+  证明中有两个关键层次：
+
+  \begin{verbatim}
+theorem after_step_four_has_borrowed_sword_for_any_drawn
+    (drawn : SixDamageCard) :
+    (stateAfterStepFour drawn).maLiangHand.borrowedSword >= 1
+
+theorem run_six_damage_path_total_damage_eq_six_for_any_drawn
+    (drawn : SixDamageCard) :
+    (runSixDamagePath drawn).totalDamageToShen = 6
+  \end{verbatim}
+
+  \begin{itemize}
+    \item \code{simp} 处理与未知牌无关的逻辑展开。
+    \item \code{omega} 处理总伤害 $\ge 6$ 这样的数值不等式。
+    \item Lean 内核通过后，结论对所有可能的 \code{X} 成立。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{总结}
+  \begin{enumerate}
+    \item 基本系统：用 Lean 明确定义阶段、时机、区域、牌、武将、技能和状态转移。
+    \item Rule Consistency：用定理检查规则是否保持全局不变量，并识别顺序歧义是否语义有害。
+    \item Strategy Verification：用存在性证明和全称量化验证战术路径不依赖直觉或运气。
+  \end{enumerate}
+
+  \begin{block}{下一步}
+    将当前的专用证明状态推广为通用多人 \code{GameState}，
+    并把响应窗口、装备区合法性和完整牌区移动纳入统一规则引擎。
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \centering
+  \vfill
+  {\Huge 谢谢}
+  \vfill
+\end{frame}
+
+\end{document}

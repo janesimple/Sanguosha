@@ -202,4 +202,14 @@ theorem judgement_replacement_order_affects_game_result :
     stateAfterSimaThenZhang != stateAfterZhangThenSima := by
   decide
 
+/-- 同一个结论的第二种写法：直接让 `decide` 把闭项算完。 -/
+theorem simaThenZhang_finalCard_is_spade2_decide :
+    finalCardSimaThenZhang = spadeLightningReplacement := by
+  decide
+
+/-- 同一个结论的另一种写法：这里同样交给 `decide`。 -/
+theorem zhangThenSima_finalCard_is_heart_decide :
+    finalCardZhangThenSima = heartReplacement := by
+  decide
+
 end SanguoshaNew

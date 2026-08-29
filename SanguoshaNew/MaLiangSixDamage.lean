@@ -252,3 +252,11 @@ theorem maliang_has_six_damage_path_for_any_unknown_card :
     · cases drawn <;> decide
 
 end SanguoshaNew
+
+/-- 同一个结论的分析式写法：先得到等式，再交给 `omega`。 -/
+theorem SanguoshaNew.run_six_damage_path_total_damage_ge_six
+    (drawn : SanguoshaNew.SixDamageCard) :
+    (SanguoshaNew.runSixDamagePath drawn).totalDamageToShen >= 6 := by
+  have h : (SanguoshaNew.runSixDamagePath drawn).totalDamageToShen = 6 := by
+    cases drawn <;> decide
+  omega

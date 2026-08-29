@@ -6,6 +6,7 @@ import SanguoshaNew.Judgement
 import SanguoshaNew.MaLiangSixDamage
 import SanguoshaNew.Invariant
 import SanguoshaNew.Examples
+import SanguoshaNew.Exercises
 
 /-!
 这是整个工程的总入口文件。

@@ -303,6 +303,7 @@ def endPhaseUnchecked (s : GameState) : GameState :=
 
 这比直接返回 `GameState` 更安全，因为它强迫我们处理非法行动。
 -/
+-- 规则层最终只暴露一个安全入口：先判合法性，再决定是否执行。
 def transition (s : GameState) (c : Command) : Option GameState :=
   if legal s c then
     match c with
@@ -315,4 +316,33 @@ def transition (s : GameState) (c : Command) : Option GameState :=
   else
     none
 
+end SanguoshaNew
+
+namespace SanguoshaNew
+
+/--
+`transition` 返回 `none` 当且仅当命令不合法。
+这条引理把“先检查合法性，再决定是否执行”明确写成了双向结论。
+-/
+theorem transition_eq_none_iff_not_legal (s : GameState) (c : Command) :
+    transition s c = none ↔ ¬ legal s c := by
+  constructor
+  · intro hnone hlegal
+    cases c <;> simp [transition, hlegal] at hnone
+  · intro hnot
+    by_cases hlegal : legal s c
+    · exact False.elim (hnot hlegal)
+    · cases c <;> simp [transition, hlegal]
+
+/--
+只要 `transition` 成功返回了某个新局面，就说明这条命令原本是合法的。
+这在反推前提时很有用，尤其适合配合 `cases` 和 `simp` 一起拆分分支。
+-/
+theorem legal_of_transition_some
+    (s : GameState) (c : Command) (s' : GameState)
+    (h : transition s c = some s') :
+    legal s c := by
+  by_cases hs : legal s c
+  · exact hs
+  · simp [transition, hs] at h
 end SanguoshaNew
